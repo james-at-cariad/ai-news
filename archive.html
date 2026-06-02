@@ -1,0 +1,549 @@
+
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Ai Wordpress News Archive",
+  "schemaVersion": 1,
+  "description": "Searchable archive of all historical AI and WordPress news digests. Browse past weeks, search by topic, and reference previous findings. Automatically updated weekly."
+}
+</script>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI/WordPress News Archive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #7c3aed;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .meta {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .nav-button {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            color: #92400e;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-button:hover {
+            background: #fcd34d;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        .search-box button {
+            padding: 10px 16px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .search-box button:hover {
+            background: #6d28d9;
+        }
+
+        .refresh-btn {
+            padding: 10px 16px;
+            background: #e5e7eb;
+            color: #374151;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #d1d5db;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #7c3aed;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .archive-entry {
+            background: white;
+            padding: 24px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #7c3aed;
+        }
+
+        .archive-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .archive-date {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .archive-week {
+            font-size: 13px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .archive-toggle {
+            background: #f3f4f6;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .archive-toggle:hover {
+            background: #e5e7eb;
+        }
+
+        .archive-content {
+            display: none;
+        }
+
+        .archive-content.expanded {
+            display: block;
+        }
+
+        .item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+            border-left: 3px solid #7c3aed;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .item-summary {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .priority-now {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .priority-explore {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .priority-monitor {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            font-size: 11px;
+            color: #4b5563;
+            margin-right: 4px;
+        }
+
+        .no-entries {
+            background: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>📚 AI & WordPress News Archive</h1>
+                    <p class="meta">Live data from GitHub — refreshes automatically</p>
+                </div>
+                <a href="#" onclick="alert('Open the main digest artifact from your Cowork sidebar. Search for: ai-wordpress-news-digest'); return false;" class="nav-button">
+                    🚀 Current Week
+                </a>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by title, summary, category... (e.g., GEO, WordPress, Claude)">
+                <button onclick="filterArchive()">Search</button>
+            </div>
+            <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalWeeks">0</div>
+                <div class="stat-label">Weeks Archived</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalItems">0</div>
+                <div class="stat-label">Total Findings</div>
+            </div>
+        </div>
+
+        <div id="errorContainer"></div>
+        <div id="archiveContainer">
+            <div class="loading">
+                <p>⏳ Loading archive from Google Sheet...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://raw.githubusercontent.com/james-at-cariad/ai-news/main/news.json';
+
+        let allData = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            setInterval(loadData, 5 * 60 * 1000);
+        });
+
+        async function loadData() {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Failed to fetch data');
+
+                const data = await response.json();
+                allData = parseData(data);
+                document.getElementById('archiveContainer').innerHTML = '<div class="loading"><p>⏳ Processing data...</p></div>';
+
+                if (allData.length === 0) {
+                    document.getElementById('archiveContainer').innerHTML = `
+                        <div class="no-entries">
+                            <p>📋 Archive is empty</p>
+                            <p>Findings will appear here as they're added to the Google Sheet</p>
+                        </div>
+                    `;
+                } else {
+                    renderArchive(allData);
+                }
+                updateStats();
+            } catch (error) {
+                errorContainer.innerHTML = `
+                    <div class="error">
+                        ⚠️ Error loading data: ${error.message}
+                        <br><small>Make sure the Google Sheet is accessible and contains data.</small>
+                    </div>
+                `;
+                console.error('Data loading error:', error);
+            }
+        }
+
+        function parseData(jsonData) {
+            if (!Array.isArray(jsonData)) return [];
+
+            // Group by week
+            const weeks = {};
+
+            for (const row of jsonData) {
+                if (row.date && row.title) {
+                    const weekKey = row.weekOf;
+                    if (!weeks[weekKey]) {
+                        weeks[weekKey] = {
+                            date: row.date,
+                            weekOf: row.weekOf,
+                            items: []
+                        };
+                    }
+                    weeks[weekKey].items.push(row);
+                }
+            }
+
+            // Convert to array and sort by date (newest first)
+            return Object.values(weeks).sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+        }
+
+        function renderArchive(weeks) {
+            const container = document.getElementById('archiveContainer');
+
+            if (weeks.length === 0) {
+                container.innerHTML = `
+                    <div class="no-entries">
+                        <p>📋 Archive is empty</p>
+                        <p>Findings will appear here as they're added</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = weeks.map((week, index) => `
+                <div class="archive-entry">
+                    <div class="archive-header">
+                        <div>
+                            <div class="archive-date">${week.date}</div>
+                            <div class="archive-week">${week.weekOf}</div>
+                        </div>
+                        <button class="archive-toggle" onclick="toggleContent(${index})">Expand</button>
+                    </div>
+                    <div class="archive-content" id="content-${index}">
+                        ${week.items.map(item => `
+                            <div class="item">
+                                <div>
+                                    <span class="priority-badge priority-${getPriorityClass(item.priority)}">
+                                        ${item.priority}
+                                    </span>
+                                </div>
+                                <div class="item-title">${escapeHtml(item.title)}</div>
+                                <div class="item-summary">${escapeHtml(item.summary)}</div>
+                                <div>
+                                    ${item.categories.split(',').map(cat => `
+                                        <span class="category-tag">${escapeHtml(cat.trim())}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleContent(index) {
+            const content = document.getElementById(`content-${index}`);
+            const button = event.target;
+
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                button.textContent = 'Expand';
+            } else {
+                content.classList.add('expanded');
+                button.textContent = 'Collapse';
+            }
+        }
+
+        function filterArchive() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            if (!searchTerm) {
+                renderArchive(allData);
+                return;
+            }
+
+            const filtered = allData.map(week => ({
+                ...week,
+                items: week.items.filter(item =>
+                    item.title.toLowerCase().includes(searchTerm) ||
+                    item.summary.toLowerCase().includes(searchTerm) ||
+                    item.categories.toLowerCase().includes(searchTerm)
+                )
+            })).filter(week => week.items.length > 0);
+
+            if (filtered.length === 0) {
+                document.getElementById('archiveContainer').innerHTML = `
+                    <div class="no-entries">
+                        <p>❌ No results found for "${escapeHtml(searchTerm)}"</p>
+                        <p>Try different keywords</p>
+                    </div>
+                `;
+                return;
+            }
+
+            renderArchive(filtered);
+        }
+
+        function updateStats() {
+            const totalWeeks = allData.length;
+            const totalItems = allData.reduce((sum, week) => sum + week.items.length, 0);
+
+            document.getElementById('totalWeeks').textContent = totalWeeks;
+            document.getElementById('totalItems').textContent = totalItems;
+        }
+
+        function getPriorityClass(priority) {
+            if (priority.includes('Now')) return 'now';
+            if (priority.includes('Explore')) return 'explore';
+            return 'monitor';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filterArchive();
+            }
+        });
+    </script>
+</body>
+</html>
