@@ -277,6 +277,19 @@
             color: #4b5563;
             margin-right: 4px;
         }
+        .source-link {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 11px;
+        }
+        .source-link a {
+            color: #7c3aed;
+            text-decoration: none;
+        }
+        .source-link a:hover {
+            text-decoration: underline;
+        }
 
         .no-entries {
             background: white;
@@ -328,7 +341,7 @@
                     <h1>📚 AI & WordPress News Archive</h1>
                     <p class="meta">Live data from GitHub — refreshes automatically</p>
                 </div>
-                <a href="#" onclick="alert('Open the main digest artifact from your Cowork sidebar. Search for: ai-wordpress-news-digest'); return false;" class="nav-button">
+                <a href="https://james-at-cariad.github.io/ai-news/digest.html" class="nav-button">
                     🚀 Current Week
                 </a>
             </div>
@@ -362,9 +375,12 @@
     </div>
 
     <script>
-        const API_URL = 'https://raw.githubusercontent.com/james-at-cariad/ai-news/main/news.json';
+        const INDEX_URL = 'https://raw.githubusercontent.com/james-at-cariad/ai-news/main/news/index.json';
+        const BASE_URL = 'https://raw.githubusercontent.com/james-at-cariad/ai-news/main/news';
 
         let allData = [];
+        let indexData = [];
+        let loadedWeeks = {};
 
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
@@ -376,10 +392,38 @@
             errorContainer.innerHTML = '';
 
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('Failed to fetch data');
+                // Fetch index
+                const indexResponse = await fetch(INDEX_URL);
+                if (!indexResponse.ok) throw new Error('Failed to fetch index');
 
-                const data = await response.json();
+                indexData = (await indexResponse.json()).weeks || [];
+
+                if (indexData.length === 0) {
+                    document.getElementById('archiveContainer').innerHTML = `
+                        <div class="no-entries">
+                            <p>📋 Archive is empty</p>
+                            <p>Findings will appear here as they're added</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Load all weeks
+                allData = [];
+                for (const week of indexData) {
+                    try {
+                        const weekResponse = await fetch(`${BASE_URL}/${week.file}`);
+                        if (weekResponse.ok) {
+                            const weekData = await weekResponse.json();
+                            allData.push(...weekData);
+                            loadedWeeks[week.date] = true;
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to load week ${week.date}:`, e);
+                    }
+                }
+
+                const data = allData;
                 allData = parseData(data);
                 document.getElementById('archiveContainer').innerHTML = '<div class="loading"><p>⏳ Processing data...</p></div>';
 
@@ -468,6 +512,7 @@
                                         <span class="category-tag">${escapeHtml(cat.trim())}</span>
                                     `).join('')}
                                 </div>
+                                ${item.source ? `<div class="source-link">📎 <a href="${escapeHtml(item.source)}" target="_blank" rel="noopener noreferrer">View source</a></div>` : ''}
                             </div>
                         `).join('')}
                     </div>
